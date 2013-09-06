@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Hydna - surprise</title>
+    
+    <meta name="description" content="" />
+    <meta name="keywords" content="" />
+    <meta name="author" content="" />
+    
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width" />
+    
+    <meta http-equiv="imagetoolbar" content="false" />
+    
+    <link rel="stylesheet" href="style/master.css" type="text/css" media="screen" />
+    
+    <!--[if lt IE 8]>
+    <link rel="stylesheet" href="style/ie7.css" type="text/css" media="screen" />
+    <![endif]-->
+    
+    <!--[if lt IE 9]>
+    <script src="script/libs/html5shiv.js"></script>
+    <![endif]-->
+    
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="script/libs/consolelog.min.js"></script>
+    <script type="text/javascript" src="http://cdn.hydna.com/1/hydna.js"></script>
+    <script src="script/libs/stats.min.js"></script>
+    <script src="script/behaviour.js"></script>
+    
+</head>
+<body>
+<div id="container">
+    <div id="video-container">
+        <img id="playback" width="480" height="320">
+
+        <div id="subtitle">Preparing camera...</div>
+    </div>
+    
+    <form id="msg_form">
+        <input type="text" id="msg" placeholder="broadcast message"> <input type="submit" value="send">
+    </form>
+    
+    <ul id="incoming">
+    </ul>
+    
+    <canvas id="drawing" width="480" height="320"></canvas>
+    <video id="live" autoplay="true"></video>
+</div>
+
+</body>
+</html>
