@@ -24,14 +24,6 @@ $(function(){
     
     var broadcaster = false;
     
-    /*
-    4:3
-640×480
-512×384
-480×320
-320×240
-    */
-    
     function _nickgen() {
         var consonants = 'bcddfghklmmnnprssttv';
         var vocals = 'aaeeiioouuy';
@@ -51,7 +43,6 @@ $(function(){
         var m = d.getMinutes();
         return (h < 12?'0' + h:h) + ':' + (m < 10?'0' + m:m);
     }
-
     
     function setup_broadcasting(callback){
         
@@ -76,10 +67,8 @@ $(function(){
             
             api_channel.close();
             
-            return callback(null, broadcaster);
-            
+            return callback(null, broadcaster);   
         }
-        
     }
     
     function start_listening(broadcasting){
@@ -115,9 +104,9 @@ $(function(){
             if(broadcasting){
             
             	navigator.getUserMedia({video: true}, function(stream){
-	    
-                	video.src = window.URL.createObjectURL(stream);
-    
+                    
+                    video.src = window.URL.createObjectURL(stream);
+                    
                     setTimeout(function(){
                         update_stream();
                         
@@ -136,19 +125,14 @@ $(function(){
             if(e.message == "wrongpassword"){
                 alert('wrong password, please try again');
             }
-        }
-        
-        
+        };
     }
-
 
     function init(){
         
         navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia || navigator.oGetUserMedia;
 
         window.URL = window.URL || window.webkitURL;
-        
-        //
         
         canvas = document.getElementById("drawing");
         canvas.width = VIDEO_WIDTH;
@@ -174,12 +158,11 @@ $(function(){
         container.append(stats.domElement);
         
         video = document.getElementById("live");
-
         
         setup_broadcasting(function(err, broadcasting){
             
             if(err){
-                alert("something went wrong");
+                alert("Error setting up, please try again");
                 return;
             }
             
