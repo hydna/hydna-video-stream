@@ -28,26 +28,39 @@
     
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
     <script src="script/libs/consolelog.min.js"></script>
-    <script type="text/javascript" src="http://cdn.hydna.com/1/hydna.js"></script>
+    <script src="http://cdn.hydna.com/1/hydna.js"></script>
     <script src="script/libs/stats.min.js"></script>
-    <script src="script/behaviour.js"></script>
+    <script src="script/app.js"></script>
     
 </head>
 <body>
 <div id="container">
-    <div id="video-container">
-        <img id="playback" width="480" height="320">
+    <div class="cf">
+        <div id="video-container">
+            <span class="live"></span>
+            <img id="playback" width="480" height="320">
 
-        <div id="subtitle">Preparing camera...</div>
+            <div id="subtitle" class="loading"><span>Loading streams...</span></div>
+        </div>
+
+        <div id="chat-container">
+            <ul id="chat"></ul>
+            <form id="msg_form" class="cf">
+                <input type="text" id="msg" placeholder="chat message" class="field"><button class="submit regular" id="submit_btn">Send</button>
+            </form>
+        </div> 
     </div>
-    
-    <form id="msg_form">
-        <input type="text" id="msg" placeholder="broadcast message"> <input type="submit" value="send">
-    </form>
-    
-    <ul id="incoming">
-    </ul>
-    
+
+    <div id="controller">
+        <button id="broadcast_btn" class="regular">Broadcast yourself!</button>
+    </div>
+
+    <div id="streams-container">
+        <h3>Available streams</h3>
+        <ul id="streams" class="cf">
+        </ul>
+    </div>
+
     <canvas id="drawing" width="480" height="320"></canvas>
     <video id="live" autoplay="true"></video>
 </div>
