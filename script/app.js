@@ -1,7 +1,6 @@
 /*
  * Todo
  * Show video instead of compressed img when broadcasting
- * connect to first in list automatically
  * disconnect to connecting if initiated other connect
  * freeze if video is coming online, ie connecting..
  * add message when disconnected by behavior
@@ -162,7 +161,7 @@ var videostream = {
         var channel = new HydnaChannel(videostream.domain + "/streams/" + uuid, "re");
         channel.onopen = function(event){
             
-            console.log("connected to stream including me:"+event.data);
+            //console.log("connected to stream including me:"+event.data);
 
             videostream.chat_el.html("");
             videostream.display_chat(videostream.nick, "You are connected to '<strong>"+name+"'s</strong>' broadcast");
@@ -197,7 +196,7 @@ var videostream = {
                 
                 // TODO
                 case "usercount":
-                    console.log("usercount update...");    
+                    //console.log("usercount update...");    
                 break;
                             
                 case "preview":
@@ -219,8 +218,6 @@ var videostream = {
         videostream.selected_stream_id = uuid;
         videostream.selected_stream_name = name;
         videostream.streams[uuid] = channel;
-
-
     },
 
     connect_lobby: function(){
