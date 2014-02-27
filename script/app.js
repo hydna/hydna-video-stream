@@ -2,9 +2,7 @@
  * Todo
  * add thumbnail on receive of there is none in there
  * add message buffer on streams
- * Chat is seen on other streams?
  * Add btn to disable emit of thumbnail
- * video conflict when connecting to other stream?
  * disconnect to connecting if initiated other connect
  * freeze if video is coming online, ie connecting..
  * add message when disconnected by behavior
@@ -175,7 +173,6 @@ var videostream = {
 
         // if we are connected to a stream?
         if(videostream.selected_channel){
-            console.log("channel is selected...");
             videostream.selected_channel.close();
             videostream.selected_channel = null;
         }
@@ -200,7 +197,6 @@ var videostream = {
 
         channel.onmessage = function(event){
             if(event.data.substr(0, 5) == "data:"){
-                console.log("incoming..");
                 videostream.display_frame(event.data);
             }
         }
@@ -215,7 +211,7 @@ var videostream = {
                     videostream.display_chat(videostream.clean_msg(msg.nick), videostream.clean_msg(msg.data));
                 break;
                 
-                // TODO
+                // TODO: add usercount
                 case "usercount":
                     //console.log("usercount update...");    
                 break;
@@ -372,7 +368,6 @@ var videostream = {
     },
 
     display_frame: function(data){
-        console.log("displaying frame...");
         videostream.playback_el.src = data;
     },
     
@@ -468,8 +463,6 @@ var videostream = {
 
         videostream.streaming = true;
         
-        console.log("video streaming alright...");
-
         if(videostream.selected_channel){
             videostream.selected_channel.close();
             videostream.selected_channel = null;
