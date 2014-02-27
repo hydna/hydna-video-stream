@@ -18,11 +18,12 @@ register('videostream-lobby', {
             event.allow(keys.join(','));
         });
     }
+
 });
 
 
 register('videostream-channel', {
-    
+
     open: function (event) {
         var channel = event.channel;
         var connid = String(event.connection.id);
@@ -48,106 +49,118 @@ register('videostream-channel', {
 
         switch (true) {
 
-            // Open channel as a broadcaster. Deny request if channel
-            // already exists in lobby
-            case event.write && event.emit && !event.read:
-                lobby.get(channelkey, function (err, adminid) {
-                    if (err != 'not found') {
-                        ASSERT(err);
-                    }
+        // Open channel as a broadcaster. Deny request if channel
+        // already exists in lobby
+        case event.write && event.emit && !event.read:
+            lobby.get(channelkey, function (err, adminid) {
+                if (err != 'not found') {
+                    ASSERT(err);
+                }
 
-                    if (adminid != null) {
-                        ASSERT('Already broadcasting');
-                    }
+                if (adminid != null) {
+                    ASSERT('Already broadcasting');
+                }
 
-                    channel.incr(KEY_COUNT, function (err, count) {
-                        ASSERT(err);
-
-                        channel.set("admin", connid, function (err) {
-
-                            ASSERT(err);
-
-                            lobby.set(channelkey, channelid + ":" + event.token, function (err) {
-                                ASSERT(err);
-
-                                channel.emit(JSON.stringify({
-                                    type: KEY_COUNT,
-                                    count: count           
-                                }));
-
-                                lobby.emit(JSON.stringify({
-                                    type: KEY_STREAM,
-                                    id: channelid,
-                                    name: event.token
-                                }));
-
-                                event.allow(String(count));
-                            });
-                  
-                        });
-
-                    });
-
-                }); 
-            
-            break;
-
-
-            // Open channel in subscriber mode. We do not check if channel
-            // exist, just allow it with a count on number of users currently
-            // watching the broadcast.
-            default:
-            case event.read && event.emit:
                 channel.incr(KEY_COUNT, function (err, count) {
                     ASSERT(err);
 
-                    channel.emit(JSON.stringify({
-                        type: KEY_COUNT,
-                        count: count           
-                    }));
+                    channel.set("admin", connid, function (err) {
 
+                        ASSERT(err);
+
+                        lobby.set(channelkey, channelid + ":" + event.token, function (err) {
+                            ASSERT(err);
+
+                            channel.emit(JSON.stringify({
+                                type: KEY_COUNT,
+                                count: count                     
+                            }));
+
+                            lobby.emit(JSON.stringify({
+                                type: KEY_STREAM,
+                                id: channelid,
+                                name: event.token
+                            }));
+
+                            event.connection.set("counted", "yes", function (err) {
+                                ASSERT(err);
+                                event.allow(String(count));
+                            });
+
+                        });
+                            
+                    });
+
+                });
+
+            }); 
+            break;
+
+
+        // Open channel in subscriber mode. We do not check if channel
+        // exist, just allow it with a count on number of users currently
+        // watching the broadcast.
+        default:
+        case event.read && event.emit:
+            channel.incr(KEY_COUNT, function (err, count) {
+                ASSERT(err);
+
+                channel.emit(JSON.stringify({
+                    type: KEY_COUNT,
+                    count: count                     
+                }));
+
+                event.connection.set("counted", "yes", function (err) {
+                    ASSERT(err);
                     event.allow(String(count));
                 });
+            });
             break;
         }
     },
-    
+
     emit: function (event) {
         var channel = event.channel;
         channel.emit(event.data);
     },
-    
+
     close: function (event) {
         var channel = event.channel;
         var connid = String(event.connection.id);
         var lobby = event.domain.getChannel(ENTRY_POINT);
         var channelkey = KEY_CHANNELS + event.params.id;
 
-        channel.decr(KEY_COUNT, function (err, count) {
-
-            if (err) {
+        event.connection.get("counted", function (err, value) {
+            if (err || value !== "yes") {
                 return;
             }
 
-            // Check if we are broadcast user, if so, delete
-            // key, or if user count is 0.
-            channel.get("admin", function (err, adminid) {
+            channel.decr(KEY_COUNT, function (err, count) {
+
                 if (err) {
                     return;
                 }
 
-                if (count == 0 || adminid == connid) {
-                    lobby.del(channelkey);
-                    lobby.emit(JSON.stringify({
-                        type: KEY_DELSTREAM,
-                        id: event.params.id
-                    }));
-                }
+                // Check if we are broadcast user, if so, delete
+                // key, or if user count is 0.
+                channel.get("admin", function (err, adminid) {
+                    if (err) {
+                        return;
+                    }
 
-                channel.emit(JSON.stringify({
-                    type: KEY_COUNT,
-                    count: count           
-                }));
+                    if (count == 0 || adminid == connid) {
+                        lobby.del(channelkey);
+                        lobby.emit(JSON.stringify({
+                            type: KEY_DELSTREAM,
+                            id: event.params.id
+                        }));
+                    }
+
+                    channel.emit(JSON.stringify({
+                        type: KEY_COUNT,
+                        count: count                     
+                    }));
+                });
             });
         });
     }
