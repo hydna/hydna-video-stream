@@ -175,6 +175,7 @@ var videostream = {
 
         // if we are connected to a stream?
         if(videostream.selected_channel){
+            console.log("channel is selected...");
             videostream.selected_channel.close();
             videostream.selected_channel = null;
         }
@@ -199,6 +200,7 @@ var videostream = {
 
         channel.onmessage = function(event){
             if(event.data.substr(0, 5) == "data:"){
+                console.log("incoming..");
                 videostream.display_frame(event.data);
             }
         }
@@ -306,6 +308,9 @@ var videostream = {
         if(videostream.selected_stream_id == uuid){
             videostream.selected_stream_id = null;
             videostream.selected_channel = null;
+            
+            // TODO: display message that stream is not broadcasting anymore
+
         }
 
         if(videostream.streams[uuid]){
@@ -316,7 +321,6 @@ var videostream = {
     },
 
     listen_to_stream: function(uuid, name){
-
 
         if(!videostream.streams[uuid] && videostream.broadcasting_uuid != uuid){
 
@@ -349,17 +353,17 @@ var videostream = {
         // Draw a frame of the live video onto the canvas
         if(videostream.broadcasting){
             
-            // TODO: if has listeners only send data then...
-            
-            if(videostream.broadcast_listeners > 1){
+            if(videostream.broadcast_listeners > 1 && videostream.streaming){
                 
-                videostream.context.drawImage(videostream.video_el, 0, 0, videostream.video_el.videoWidth, videostream.video_el.videoHeight, 0, 0, videostream.video_width, videostream.video_height);
-                var theimg = videostream.canvas_el.toDataURL("image/jpeg", videostream.quality);
+                try{
+                    videostream.context.drawImage(videostream.video_el, 0, 0, videostream.video_el.videoWidth, videostream.video_el.videoHeight, 0, 0, videostream.video_width, videostream.video_height);
+                    var theimg = videostream.canvas_el.toDataURL("image/jpeg", videostream.quality);
             
-                // Check if size of data is wihtin the payload limit
-                if (HydnaChannel.sizeOf(theimg) < HydnaChannel.MAXSIZE) {
-                    videostream.broadcasting_stream.send(theimg, 5);
-                }
+                    // Check if size of data is wihtin the payload limit
+                    if (HydnaChannel.sizeOf(theimg) < HydnaChannel.MAXSIZE) {
+                        videostream.broadcasting_stream.send(theimg, 5);
+                    }
+                }catch(e){}
 
             }
 
@@ -368,6 +372,7 @@ var videostream = {
     },
 
     display_frame: function(data){
+        console.log("displaying frame...");
         videostream.playback_el.src = data;
     },
     
@@ -411,20 +416,32 @@ var videostream = {
         
         nick = videostream.clean_msg(nick);
         msg = videostream.clean_msg(msg);
+
+        if(msg.length > 25){
+            msg = msg.substr(0, 25) + "...";
+        }
         
         var thumb = $("#"+id+" .msg");
-        thumb.html("<span>"+msg+"</span>");
-        thumb.stop(true);
-        thumb.fadeIn("fast");
+        thumb.html("<span>"+nick+" says: "+msg+"</span>");
+        
+        clearTimeout(thumb.data('timer'));
+        thumb.data('timer', setTimeout(function() {
+            thumb.stop(true, true).fadeOut();
+        }, 3000));
+        
+        thumb.stop(true, true).fadeIn('fast');
     },
     send_preview: function(){
 
         if(videostream.broadcasting){
-            
-            videostream.preview_context.drawImage(videostream.video_el, 0, 0, videostream.video_el.videoWidth, videostream.video_el.videoHeight, 0, 0, videostream.preview_width, videostream.preview_height);
+           
+            try{
+                videostream.preview_context.drawImage(videostream.video_el, 0, 0, videostream.video_el.videoWidth, videostream.video_el.videoHeight, 0, 0, videostream.preview_width, videostream.preview_height);
 
-            var theimg = videostream.preview_el.toDataURL("image/jpeg", videostream.quality);
-            videostream.broadcasting_stream.emit(JSON.stringify({type:"preview", data: theimg}));
+                var theimg = videostream.preview_el.toDataURL("image/jpeg", videostream.quality);
+                videostream.broadcasting_stream.emit(JSON.stringify({type:"preview", data: theimg}));
+            }catch(e){}
+
             setTimeout(function(){
                 videostream.send_preview();
             }, videostream.preview_delay);
@@ -451,6 +468,8 @@ var videostream = {
 
         videostream.streaming = true;
         
+        console.log("video streaming alright...");
+
         if(videostream.selected_channel){
             videostream.selected_channel.close();
             videostream.selected_channel = null;
@@ -477,7 +496,6 @@ var videostream = {
                     
             videostream.show_message("You are live!!", true);
             videostream.send_preview();
-                    
             videostream.display_stream(uuid, videostream.nick);
 
             videostream.live_indicator_el.fadeIn("slow");
