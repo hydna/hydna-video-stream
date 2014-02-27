@@ -1,10 +1,14 @@
 /*
  * Todo
- * Show video instead of compressed img when broadcasting
+ * add thumbnail on receive of there is none in there
+ * add message buffer on streams
+ * Chat is seen on other streams?
+ * Add btn to disable emit of thumbnail
+ * video conflict when connecting to other stream?
  * disconnect to connecting if initiated other connect
  * freeze if video is coming online, ie connecting..
  * add message when disconnected by behavior
- * add count to streams
+ * add count to streams!
  * */
 
 var videostream = {
@@ -47,6 +51,7 @@ var videostream = {
 
     connecting: false,
     supports_webcam: true,
+    broadcast_listeners: 0,
 
     nick: "",
 
@@ -91,16 +96,13 @@ var videostream = {
         
         videostream.broadcast_btn_el.on("click", function(e){
             e.preventDefault();
+            
             if(!videostream.broadcasting){
                 videostream.broadcast();
-                $(this).text("Stop broadcasting");
-
+                
             }else{
-                $(this).text("Broadcast yourself!");
+                videostream.terminate_broadcast();
             }
-
-            $(this).prop("disabled", true);
-            $(this).addClass("disabled");
 
         });
 
@@ -118,7 +120,7 @@ var videostream = {
             if(videostream.broadcasting_uuid != uuid && videostream.selected_stream_id != uuid){
                 videostream.connect_stream(uuid, name);
             }else{
-                alert("You are already connected this stream");
+                alert("You are already connected to this stream");
             }
         });
 
@@ -139,13 +141,24 @@ var videostream = {
             videostream.broadcasting_stream.close();
             videostream.broadcasting_stream = null;
 
+            videostream.video_el.removeEventListener('canplay', videostream.video_ready);
+            videostream.streaming = false;
+
             $("#"+videostream.broadcasting_uuid).remove();
 
             videostream.broadcasting_uuid = "";
             videostream.connecting = false;
 
             videostream.live_indicator_el.fadeOut("fast");
+
+            
+            videostream.broadcast_btn_el.text("Broadcast yourself!");
+            videostream.broadcast_btn_el.prop("disabled", false);
+            videostream.broadcast_btn_el.removeClass("disabled");
+
         }
+        
+        videostream.hide_video();
     },
 
     connect_stream: function(uuid, name){
@@ -154,15 +167,21 @@ var videostream = {
 
         videostream.terminate_broadcast();
         
+        // if we are listening to this stream, close that conn
         if(videostream.streams[uuid]){
             videostream.streams[uuid].close();
             videostream.streams[uuid] = null;
         }
+
+        // if we are connected to a stream?
+        if(videostream.selected_channel){
+            videostream.selected_channel.close();
+            videostream.selected_channel = null;
+        }
+        
         var channel = new HydnaChannel(videostream.domain + "/streams/" + uuid, "re");
         channel.onopen = function(event){
             
-            //console.log("connected to stream including me:"+event.data);
-
             videostream.chat_el.html("");
             videostream.display_chat(videostream.nick, "You are connected to '<strong>"+name+"'s</strong>' broadcast");
             
@@ -174,8 +193,8 @@ var videostream = {
 
             videostream.display_stream(uuid, name);
             
-            $(videostream.streams_list_el, "li").removeClass("selected");
-            $("#" + uuid, videostream.streams_list_el).addClass("selected");;
+            $("li", videostream.streams_list_el).removeClass("selected");
+            $("#" + uuid, videostream.streams_list_el).addClass("selected");
         }
 
         channel.onmessage = function(event){
@@ -209,7 +228,7 @@ var videostream = {
             // TODO add handlers for error
             if(event.hadError){
                 //console.log("Error");
-            }else if(wasClean){
+            }else if(event.wasClean){
                 // i closed this or someone else did...
             }
         }
@@ -273,11 +292,6 @@ var videostream = {
         lobby_channel.onsignal = function(event){
             var msg = JSON.parse(event.data);
             switch(msg.type){
-                case "chat":
-                    //videostream.display_chat(msg.nick, msg.data);
-                    break;
-                case "preview":
-                    break;
                 case "del":
                     videostream.remove_stream(msg.id);
                     break;
@@ -303,6 +317,7 @@ var videostream = {
 
     listen_to_stream: function(uuid, name){
 
+
         if(!videostream.streams[uuid] && videostream.broadcasting_uuid != uuid){
 
             var mychannel = new HydnaChannel(videostream.domain + "/streams/" + uuid, "e");
@@ -314,9 +329,9 @@ var videostream = {
                 var msg = videostream.parse_signal(event.data);
                 
                 switch(msg.type){
-                    
+
                     case "chat":
-                        videostream.display_chat(videostream.clean_msg(msg.nick), videostream.clean_msg(msg.data));
+                        videostream.display_chat_on_stream(uuid, videostream.clean_msg(msg.nick), videostream.clean_msg(msg.data));
                     break;
                     
                     case "preview":
@@ -334,16 +349,19 @@ var videostream = {
         // Draw a frame of the live video onto the canvas
         if(videostream.broadcasting){
             
-            videostream.context.drawImage(videostream.video_el, 0, 0, videostream.video_width, videostream.video_height);
-        
-            var theimg = videostream.canvas_el.toDataURL("image/jpeg", videostream.quality);
+            // TODO: if has listeners only send data then...
             
-            videostream.display_frame(theimg);
+            if(videostream.broadcast_listeners > 1){
+                
+                videostream.context.drawImage(videostream.video_el, 0, 0, videostream.video_el.videoWidth, videostream.video_el.videoHeight, 0, 0, videostream.video_width, videostream.video_height);
+                var theimg = videostream.canvas_el.toDataURL("image/jpeg", videostream.quality);
+            
+                // Check if size of data is wihtin the payload limit
+                if (HydnaChannel.sizeOf(theimg) < HydnaChannel.MAXSIZE) {
+                    videostream.broadcasting_stream.send(theimg, 5);
+                }
 
-            // Check if size of data is wihtin the payload limit
-            if (HydnaChannel.sizeOf(theimg) < HydnaChannel.MAXSIZE) {
-                videostream.broadcasting_stream.send(theimg, 5);
-            }        
+            }
 
             setTimeout(videostream.update_stream, videostream.delay);
         }
@@ -351,6 +369,15 @@ var videostream = {
 
     display_frame: function(data){
         videostream.playback_el.src = data;
+    },
+    
+    display_video: function(){
+        $("#live").show(); 
+        $("#playback").hide();
+    },
+    hide_video: function(){
+        $("#live").hide(); 
+        $("#playback").show();
     },
 
     display_preview: function(id, data){
@@ -379,12 +406,22 @@ var videostream = {
 
         videostream.chat_el.scrollTop(videostream.chat_el[0].scrollHeight);
     },
-
+    
+    display_chat_on_stream: function(id, nick, msg){
+        
+        nick = videostream.clean_msg(nick);
+        msg = videostream.clean_msg(msg);
+        
+        var thumb = $("#"+id+" .msg");
+        thumb.html("<span>"+msg+"</span>");
+        thumb.stop(true);
+        thumb.fadeIn("fast");
+    },
     send_preview: function(){
 
         if(videostream.broadcasting){
             
-            videostream.preview_context.drawImage(videostream.canvas_el, 0, 0, videostream.video_width, videostream.video_height, 0, 0, videostream.preview_width, videostream.preview_height);
+            videostream.preview_context.drawImage(videostream.video_el, 0, 0, videostream.video_el.videoWidth, videostream.video_el.videoHeight, 0, 0, videostream.preview_width, videostream.preview_height);
 
             var theimg = videostream.preview_el.toDataURL("image/jpeg", videostream.quality);
             videostream.broadcasting_stream.emit(JSON.stringify({type:"preview", data: theimg}));
@@ -406,91 +443,117 @@ var videostream = {
         }
     },
 
+    video_ready: function(ev){
+        
+        videostream.video_el.removeEventListener('canplay', videostream.video_ready);
+
+        videostream.show_message("Starting broadcast...", false, true);
+
+        videostream.streaming = true;
+        
+        if(videostream.selected_channel){
+            videostream.selected_channel.close();
+            videostream.selected_channel = null;
+            videostream.streams[videostream.selected_stream_id] = null;
+
+            videostream.listen_to_stream(videostream.selected_stream_id);
+        }
+
+        var uuid = videostream.guid(); 
+        
+        videostream.broadcasting = true;
+        videostream.broadcasting_uuid = uuid;
+        
+        videostream.broadcast_btn_el.prop("disabled", false);
+        videostream.broadcast_btn_el.removeClass("disabled");
+
+        var channel = new HydnaChannel(videostream.domain + "/streams/" + uuid + "?" + videostream.nick, "we");
+        
+        channel.onopen = function(event){
+
+            videostream.broadcasting_stream = channel;
+            
+            videostream.update_stream();
+                    
+            videostream.show_message("You are live!!", true);
+            videostream.send_preview();
+                    
+            videostream.display_stream(uuid, videostream.nick);
+
+            videostream.live_indicator_el.fadeIn("slow");
+
+            videostream.display_chat(videostream.nick, "You are now broadcasting!");
+            
+            videostream.submit_btn_el.removeClass("disabled");
+            
+            $("li", videostream.streams_list_el).removeClass("selected");
+            $("#" + uuid, videostream.streams_list_el).addClass("selected");
+
+        }
+
+        channel.onsignal = function(event){
+            
+            var msg = videostream.parse_signal(event.data);
+
+            switch(msg.type){
+                case "usercount":
+                    videostream.broadcast_listeners = msg.count;
+                break;
+
+                case "preview":
+                    videostream.display_preview(uuid, msg.data);
+                break;
+                case "chat":
+                    $("#"+uuid+" a span").text(msg.data);
+                    videostream.display_chat(videostream.clean_msg(msg.nick), videostream.clean_msg(msg.data));
+                break;
+            }
+        }
+
+        channel.onclose = function(event){
+            if(event.hadError){
+                // TODO restore to not broadcasting
+            }
+        }
+
+        videostream.selected_channel = channel;
+        videostream.selected_stream_id = uuid;
+    },
+
     broadcast: function(){
         
         if(!videostream.broadcasting){
 
             videostream.prompt_nick();
+            
+            videostream.broadcast_btn_el.text("Stop broadcasting");
+            videostream.broadcast_btn_el.prop("disabled", true);
+            videostream.broadcast_btn_el.addClass("disabled");
 
             videostream.show_message("Activating camera...", false, true);
+
+            videostream.video_el.addEventListener('canplay', videostream.video_ready, false);
             
-            navigator.getUserMedia({video: true}, function(stream){
+            navigator.getUserMedia({video: true, audio: false}, function(stream){
                     
                 videostream.show_message("Preparing camera...", false, true);
                 
                 videostream.video_el.src = window.URL.createObjectURL(stream);
-                
-                setTimeout(function(){
 
-                    videostream.show_message("Starting broadcast...", false, true);
+                videostream.display_video();
                     
-                    if(videostream.selected_channel){
-                        videostream.selected_channel.close();
-                        videostream.selected_channel = null;
-               
-                        videostream.listen_to_stream(videostream.selected_stream_id);
-                    }
-
-                    var uuid = videostream.guid(); 
-                    
-                    videostream.broadcasting = true;
-                    videostream.broadcasting_uuid = uuid;
-
-                    var channel = new HydnaChannel(videostream.domain + "/streams/" + uuid + "?" + videostream.nick, "we");
-                    
-                    channel.onopen = function(event){
-
-                        videostream.broadcasting_stream = channel;
-                        
-                        videostream.update_stream();
-                                
-                        videostream.show_message("You are live!!", true);
-                        videostream.send_preview();
-                                
-                        videostream.display_stream(uuid, videostream.nick);
-
-                        videostream.live_indicator_el.fadeIn("slow");
-
-                        videostream.display_chat(videostream.nick, "You are now broadcasting!");
-                        
-                        videostream.submit_btn_el.removeClass("disabled");
-
-                    }
-
-                    channel.onsignal = function(event){
-                        
-                        var msg = videostream.parse_signal(event.data);
-
-                        switch(msg.type){
-                            case "preview":
-                                videostream.display_preview(uuid, msg.data);
-                            break;
-                            case "chat":
-                                $("#"+uuid+" a span").text(msg.data);
-                                videostream.display_chat(videostream.clean_msg(msg.nick), videostream.clean_msg(msg.data));
-                            break;
-                        }
-                    }
-
-                    channel.onclose = function(event){
-                        if(event.hadError){
-                            // TODO restore to not broadcasting
-                        }
-                    }
-
-                    videostream.selected_channel = channel;
-                    videostream.selected_stream_id = uuid;
-
-                }, videostream.video_init_delay);
-    
                 }, function(err){
 
                     videostream.show_message("You need to allow camera to broadcast");
 
                     videostream.broadcasting = false;
+                    
+                    videostream.broadcast_btn_el.text("Broadcast yourself!");
+                    videostream.broadcast_btn_el.prop("disabled", false);
+                    videostream.broadcast_btn_el.removeClass("disabled");
+
                 }
-            );
-            
+            )
         }
     },
     
@@ -585,7 +648,7 @@ var videostream = {
         var d = new Date();
         var h = d.getHours();
         var m = d.getMinutes();
-        return (h < 12?'0' + h:h) + ':' + (m < 10?'0' + m:m);
+        return (h < 10?'0' + h:h) + ':' + (m < 10?'0' + m:m);
     }
 };
 

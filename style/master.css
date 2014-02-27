@@ -85,7 +85,7 @@ canvas, img, video{
 
 #chat{
     height: 324px;
-    overflow: hidden;
+    overflow: scroll;
     background: white;
     padding: 0 10px; 
     font-family: arial, sans-serif;
