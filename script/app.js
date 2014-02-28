@@ -207,9 +207,11 @@ var videostream = {
         }
 
         channel.onmessage = function(event){
-            if(event.data.substr(0, 5) == "data:"){
-                videostream.display_frame(event.data);
-            }
+            //if(event.data.substr(0, 5) == "data:"){
+            try{
+                //videostream.display_frame(event.data);
+            }catch(e){}
+            //}
         }
 
         channel.onsignal = function(event){
