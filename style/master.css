@@ -30,6 +30,44 @@ canvas, img, video{
     border:none;
 }
 
+#header{
+    background: #181818 url(../images/mark.png) no-repeat 20px center;
+    color: #fff;
+    padding: 10px;
+}
+#header h3{
+    color: #fff;
+    display:inline;
+    line-height: 1em;
+
+}
+#header a:link,
+#header a:active,
+#header a:visited,
+#header a:hover{
+    font-weight:bold;
+    text-decoration:none;
+    color: #fff;
+    padding-left: 35px;
+}
+#header span{
+    color: #666;
+    margin-left: 10px;
+}
+
+#header a.source,
+#header a.source:link,
+#header a.source:active,
+#header a.source:visited,
+#header a.source:hover{
+    font-weight: normal;
+    float: right;
+    text-decoration: underline;
+    color: #666;
+}
+#header a.source:hover{
+    color: #fff;
+}
 
 #container{
     max-width: 860px;
@@ -191,7 +229,7 @@ canvas, img, video{
 
 #streams{
     clear: both;
-    min-height: 132px;
+    min-height: 173px;
     position: relative;
     z-index: 4;
 }   
@@ -337,6 +375,7 @@ button.regular{
     color: #444;
     text-shadow: #efefef 0 1px 0;
     position: relative;
+    outline:none;
 }
 
 /* Grid

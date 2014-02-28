@@ -1,7 +1,8 @@
 /*
  * Todo
+ * add mobile view
+ * add user count
  * add thumbnail on receive of there is none in there
- * add message buffer on streams
  * Add btn to disable emit of thumbnail
  * disconnect to connecting if initiated other connect
  * freeze if video is coming online, ie connecting..
@@ -50,6 +51,7 @@ var videostream = {
     connecting: false,
     supports_webcam: true,
     broadcast_listeners: 0,
+    should_emit_thumb: true,
 
     nick: "",
 
@@ -97,11 +99,9 @@ var videostream = {
             
             if(!videostream.broadcasting){
                 videostream.broadcast();
-                
             }else{
                 videostream.terminate_broadcast();
             }
-
         });
 
         if(!videostream.supports_webcam){
@@ -131,6 +131,11 @@ var videostream = {
         });
 
         videostream.connect_lobby();
+        if(videostream.supports_webcam){
+            videostream.display_message("Welcome! Start broadcasting yourself by pressing the broadcast btn and approving the camera request.");
+        }else{
+            videostream.display_message("Welcome! Your web browser does not support using your webcam. But you can always see other people's streams.");
+        }
     },
 
     terminate_broadcast: function(){
@@ -148,12 +153,10 @@ var videostream = {
             videostream.connecting = false;
 
             videostream.live_indicator_el.fadeOut("fast");
-
             
             videostream.broadcast_btn_el.text("Broadcast yourself!");
             videostream.broadcast_btn_el.prop("disabled", false);
             videostream.broadcast_btn_el.removeClass("disabled");
-
         }
         
         videostream.hide_video();
@@ -162,7 +165,6 @@ var videostream = {
     connect_stream: function(uuid, name){
         
         videostream.prompt_nick();
-
         videostream.terminate_broadcast();
         
         // if we are listening to this stream, close that conn
@@ -223,11 +225,9 @@ var videostream = {
         }
 
         channel.onclose = function(event){
-            // TODO add handlers for error
-            if(event.hadError){
-                //console.log("Error");
-            }else if(event.wasClean){
-                // i closed this or someone else did...
+            if(event.wasClean){
+                videostream.chat_el.html("");
+                videostream.display_message("You were disconnected from stream");
             }
         }
 
@@ -271,12 +271,8 @@ var videostream = {
                         }
                     }
                 }
-
-            }else{
-                // we have no streams right now, urge a broadcast
-                // TODO urge broadcasting
             }
-            
+
             videostream.broadcast_btn_el.prop("disabled", false);
             videostream.broadcast_btn_el.removeClass("disabled");
             
@@ -292,10 +288,10 @@ var videostream = {
             switch(msg.type){
                 case "del":
                     videostream.remove_stream(msg.id);
-                    break;
+                break;
                 case "stream":
                     videostream.listen_to_stream(msg.id, msg.name);
-                    break;
+                break;
             }
         }
     },
@@ -304,9 +300,7 @@ var videostream = {
         if(videostream.selected_stream_id == uuid){
             videostream.selected_stream_id = null;
             videostream.selected_channel = null;
-            
             // TODO: display message that stream is not broadcasting anymore
-
         }
 
         if(videostream.streams[uuid]){
@@ -407,6 +401,19 @@ var videostream = {
         videostream.chat_el.scrollTop(videostream.chat_el[0].scrollHeight);
     },
     
+    display_message: function(msg){
+        
+        msg = videostream.clean_msg(msg);
+        
+        videostream.chat_el.append([
+            '<li class="message">',
+            msg,
+            '</li>'
+        ].join(''));
+
+        videostream.chat_el.scrollTop(videostream.chat_el[0].scrollHeight);
+    },
+
     display_chat_on_stream: function(id, nick, msg){
         
         nick = videostream.clean_msg(nick);
@@ -426,16 +433,19 @@ var videostream = {
         
         thumb.stop(true, true).fadeIn('fast');
     },
+
     send_preview: function(){
 
         if(videostream.broadcasting){
-           
-            try{
-                videostream.preview_context.drawImage(videostream.video_el, 0, 0, videostream.video_el.videoWidth, videostream.video_el.videoHeight, 0, 0, videostream.preview_width, videostream.preview_height);
+            
+            if(videostream.should_emit_thumb){
+                try{
+                    videostream.preview_context.drawImage(videostream.video_el, 0, 0, videostream.video_el.videoWidth, videostream.video_el.videoHeight, 0, 0, videostream.preview_width, videostream.preview_height);
 
-                var theimg = videostream.preview_el.toDataURL("image/jpeg", videostream.quality);
-                videostream.broadcasting_stream.emit(JSON.stringify({type:"preview", data: theimg}));
-            }catch(e){}
+                    var theimg = videostream.preview_el.toDataURL("image/jpeg", videostream.quality);
+                    videostream.broadcasting_stream.emit(JSON.stringify({type:"preview", data: theimg}));
+                }catch(e){}
+            }
 
             setTimeout(function(){
                 videostream.send_preview();
@@ -492,7 +502,8 @@ var videostream = {
             videostream.display_stream(uuid, videostream.nick);
 
             videostream.live_indicator_el.fadeIn("slow");
-
+            
+            videostream.chat_el.html("");
             videostream.display_chat(videostream.nick, "You are now broadcasting!");
             
             videostream.submit_btn_el.removeClass("disabled");
@@ -606,9 +617,7 @@ var videostream = {
         if(!videostream.nick){
             
             var generated = videostream.nickgen();
-
             var person = prompt("Please enter your name", generated);
-            
             var clean = "";
 
             if (person!=null){
@@ -629,8 +638,7 @@ var videostream = {
         var msg = {};
         try{
             msg = JSON.parse(data);
-        }catch(e){
-        }
+        }catch(e){}
 
         return msg;
     },
