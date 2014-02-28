@@ -14,7 +14,7 @@ var videostream = {
     preview_height: 90,
     quality: .75,
     framerate: 12,
-    delay: 1000/12,
+    delay: 1000/2,
     video_init_delay: 1500, 
     preview_delay: 5000,
     max_nick_length: 15,
