@@ -14,7 +14,7 @@ var videostream = {
     preview_height: 90,
     quality: .75,
     framerate: 12,
-    delay: 1000/2,
+    delay: 1000/12,
     video_init_delay: 1500, 
     preview_delay: 5000,
     max_nick_length: 15,
@@ -209,7 +209,7 @@ var videostream = {
         channel.onmessage = function(event){
             //if(event.data.substr(0, 5) == "data:"){
             try{
-                //videostream.display_frame(event.data);
+                videostream.display_frame(event.data);
             }catch(e){}
             //}
         }
