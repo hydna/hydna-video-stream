@@ -28,6 +28,7 @@ a:hover{
 
 canvas, img, video{    
     border:none;
+    background:none;
 }
 
 #header{
@@ -83,10 +84,15 @@ canvas, img, video{
     border: 1px solid red;
     border: 1px solid #ddd;
     box-shadow: #e3e3e3 0 1px 1px;
-    width:480px;
-    height: 360px;
+    width:502px;
+    height: 382px;
     min-height: 100px;
     padding: 10px;
+
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box; 
+    box-sizing: border-box;
+
 }
 
 #video-container .live{
@@ -190,18 +196,19 @@ canvas, img, video{
     display: block;
     float: left;
     padding: 10px;
-    boz-sizing: border-box;
-    
     font-size: 1em;
     font-family: arial, sans-serif;
     line-height: 1em;
 
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box; 
+    box-sizing: border-box;
 }
 
 #chat-container .submit{
     display: block;
     boz-sizing: border-box;
-    width: 30%;
+    width: 35%;
     float: right;
     padding: 10px;
     margin: 0;
@@ -437,6 +444,63 @@ button.regular{
 
 /* All Mobile Sizes (devices and browser) */
 @media only screen and (max-width: 767px) {
+    #container{
+        max-width: 100%;
+        min-width: 100%;
+        width: 100%;
+        margin: 0 0; 
+        padding: 0 0;
+    }
+
+    #video-container{
+        float:none;
+        width: 320px;
+        height: 240px;
+        margin: 10px auto 0 auto;
+    }
+
+    #chat-container{
+        float: none;
+        width: auto;
+        height: 200px;
+        margin: 10px 5px 0 5px;
+    }
+
+    #chat-container #chat{
+        height: 164px;
+    }
+
+    #streams{
+        text-align: center;
+    }
+
+    #streams li{
+        float:none;
+        display:inline-block;
+    }
+
+    #live{
+        width: 298px;
+        height: 218px;
+        display: block;
+    }
+
+    #video-container img,
+    #playback{
+        width: 298px;
+        height: 218px;
+    }
+    
+    #streams-container{
+        margin: 0 5px;
+    }
+    #header span{
+        display:none;
+    }
+
+    #header .source{
+        display:none;    
+    }
 }
 
 /* Mobile Landscape Size to Tablet Portrait (devices and browsers) */

@@ -157,6 +157,9 @@ var videostream = {
             videostream.broadcast_btn_el.text("Broadcast yourself!");
             videostream.broadcast_btn_el.prop("disabled", false);
             videostream.broadcast_btn_el.removeClass("disabled");
+            
+            videostream.chat_el.html("");
+            videostream.display_message("You have have stopped broadcasting!");
         }
         
         videostream.hide_video();
