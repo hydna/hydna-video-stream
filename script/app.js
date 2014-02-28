@@ -1,12 +1,7 @@
 /*
  * Todo
- * add mobile view
- * add user count
  * add thumbnail on receive of there is none in there
- * Add btn to disable emit of thumbnail
  * disconnect to connecting if initiated other connect
- * freeze if video is coming online, ie connecting..
- * add message when disconnected by behavior
  * add count to streams!
  * */
 

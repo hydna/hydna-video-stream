@@ -216,6 +216,9 @@ canvas, img, video{
     -webkit-box-sizing: border-box;
     -moz-box-sizing: border-box; 
     box-sizing: border-box;
+    
+    -webkit-appearance: none;
+    border-radius: 0;
 }
 
 #chat-container .submit{
@@ -355,7 +358,7 @@ canvas, img, video{
 }
 
 #live{
-    display:none;
+    /*display:none;*/
 }
 
 #stats{ 
@@ -462,7 +465,7 @@ button.regular{
         min-width: 100%;
         width: 100%;
         margin: 0 0; 
-        padding: 0 0;
+        padding: 0 0 20px 0;
     }
 
     #video-container{
@@ -492,16 +495,22 @@ button.regular{
         display:inline-block;
     }
 
-    #live{
+    #live,
+    video{
         width: 298px;
         height: 218px;
         display: block;
+        background:none;
+        border:none;
     }
 
     #video-container img,
     #playback{
         width: 298px;
         height: 218px;
+        background:none;
+        border:none;
+        display:none;
     }
     
     #streams-container{
@@ -514,6 +523,10 @@ button.regular{
     #header .source{
         display:none;    
     }
+    #thumbtoggle{
+        display:none;
+    }
+
 }
 
 /* Mobile Landscape Size to Tablet Portrait (devices and browsers) */
