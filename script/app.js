@@ -131,17 +131,19 @@ var videostream = {
         }else{
             videostream.display_message("Welcome! Your web browser does not support using your webcam. But you can always see other people's streams.");
         }
-
-        $("#thumbtoggle").on("click", function(e){
-            e.preventDefault();
-            if(videostream.should_emit_thumb){
-                videostream.should_emit_thumb = false;
-                $(this).text("Turn on emit thumb");
-            }else{
-                videostream.should_emit_thumb = true;
-                $(this).text("Turn off emit thumb");
-            }
-        });
+        
+        if($("#thumbtoggle").length > 0){
+            $("#thumbtoggle").on("click", function(e){
+                e.preventDefault();
+                if(videostream.should_emit_thumb){
+                    videostream.should_emit_thumb = false;
+                    $(this).text("Turn on emit thumb");
+                }else{
+                    videostream.should_emit_thumb = true;
+                    $(this).text("Turn off emit thumb");
+                }
+            });
+        }
     },
 
     terminate_broadcast: function(){
