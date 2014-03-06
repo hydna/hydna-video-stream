@@ -34,6 +34,7 @@ var videostream = {
     context: null,
     canvas_el: null,
     video_el: null,
+    video_stream: null,
     preview_context: null,
     preview_el: null,
     playback_el: null,
@@ -154,6 +155,8 @@ var videostream = {
 
             videostream.video_el.removeEventListener('canplay', videostream.video_ready);
             videostream.streaming = false;
+            videostream.video_el.pause();
+            videostream.video_stream.stop();
 
             $("#"+videostream.broadcasting_uuid).remove();
 
@@ -574,6 +577,7 @@ var videostream = {
                 videostream.show_message("Preparing camera...", false, true);
                 
                 videostream.video_el.src = window.URL.createObjectURL(stream);
+                videostream.video_stream = stream;
 
                 videostream.display_video();
                     
